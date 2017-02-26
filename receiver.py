@@ -4,41 +4,41 @@ import socket
 from thread import *
 import logging
 import time
+import threading
 
 
 class ConnectionReceiver:
 
     """Gets data from each client by creating a thread for each of them"""
 
-    @staticmethod
-    def client_thread(connection_counter, conn):
+    def client_thread(self, connection_counter, conn):
 
-        peer_name = connection_counter
-        connection_counter -= 1
+        peer_name = str(connection_counter)
 
-        LoggerClass(peer_name)
+
+        threading.Thread(target=LoggerClass, args=peer_name).start()
 
         # infinite loop so that function do not terminate and thread do not end.
         while True:
             # Receiving from client
             data = conn.recv(1024)  # Receive 1024 bytes of data
             print data
-            LoggerClass.cpu_log(data)  # Log it to file
+            LoggerClass.cpu_log(peer_name, data)  # Log it to file
 
             time.sleep(0.5)  # wait for the other transmissions
 
             data = conn.recv(1024)
             print data
-            LoggerClass.ram_log(data)
+            LoggerClass.ram_log(peer_name, data)
 
             time.sleep(0.5)
 
     def __init__(self):
-        # Keeps a track of how many connections took place
-        connection_counter = 1
         # Variable definitions
         host = 'localhost'
         port = 52000
+
+        connection_counter = 1
 
         sock = socket.socket()
 
@@ -48,8 +48,11 @@ class ConnectionReceiver:
         while True:
             conn, addr = sock.accept()  # Accepting incoming connections
             # Creating new thread. Calling client_thread function for this function and passing conn as argument.
-            start_new_thread(ConnectionReceiver.client_thread(connection_counter, conn))  # start new thread
-            # takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
+            try:
+                threading.Thread(target=ConnectionReceiver.client_thread, args=(self, connection_counter, conn)).start()
+                connection_counter += 1
+            except:
+                pass
 
 
 class LoggerClass:
@@ -57,20 +60,28 @@ class LoggerClass:
     """Class that logs down the received data from each node"""
 
     def __init__(self, peer_name):
-
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                            filename='node-%s.log' % peer_name)
+        # create the thread's logger
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.setLevel(logging.INFO)
+        # create a file handler writing to a file named after the thread
+        file_handler = logging.FileHandler('node-%s.log' % peer_name)
+        # create a custom formatter and register it for the file handler
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        # register the file handler for the thread-specific logger
+        logger.addHandler(file_handler)
 
     @staticmethod
-    def cpu_log(data):
-
-        logging.info("CPU: %s", data)
+    def cpu_log(peer_name, data):
+        # Log CPU data
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.info("CPU: %s", data)
 
     @staticmethod
-    def ram_log(data):
-
-        logging.info("RAM: %s", data)
+    def ram_log(peer_name, data):
+        # Log RAM data
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.info("RAM: %s", data)
 
 
 
