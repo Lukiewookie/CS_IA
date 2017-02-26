@@ -5,6 +5,8 @@ import logging
 import time
 import threading
 
+from distutils.dir_util import copy_tree
+
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 from email.MIMEBase import MIMEBase
@@ -51,9 +53,24 @@ class ConnectionReceiver:
 
                 time.sleep(0.1)
 
+                data = conn.recv(1024)
+                print data
+                LoggerClass.netsent_log(peer_name, data)
+
+                time.sleep(0.1)
+
+                data = conn.recv(1024)
+                print data
+                LoggerClass.netrecv_log(peer_name, data)
+
+                time.sleep(0.1)
+
+                LoggerClass.spacer(peer_name)
+
+
             except socket.error, e:
                 AdminManager.email_sender(peer_name)
-                print ("The node %s has dropped connection" % peer_name)
+                print ("Node %s has dropped connection" % peer_name)
                 break
 
     def __init__(self):
@@ -80,7 +97,10 @@ class ConnectionReceiver:
 
 class LoggerClass:
 
-    """Class that logs down the received data from each node"""
+    """
+    Class that logs down the received data from each node. This class contains methods for
+    writing all the different info separately.
+    """
 
     def __init__(self, peer_name):
         # create the thread's logger
@@ -89,7 +109,7 @@ class LoggerClass:
         # create a file handler writing to a file named after the thread
         file_handler = logging.FileHandler('node-%s.log' % peer_name)
         # create a custom formatter and register it for the file handler
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')  # - %(levelname)s
         file_handler.setFormatter(formatter)
         # register the file handler for the thread-specific logger
         logger.addHandler(file_handler)
@@ -108,9 +128,27 @@ class LoggerClass:
 
     @staticmethod
     def disk_log(peer_name, data):
-        # Log RAM data
+        # Log DISK data
         logger = logging.getLogger('node-%s' % peer_name)
         logger.info("DISK Used: %s MB", data)
+
+    @staticmethod
+    def netsent_log(peer_name, data):
+        # Log Netwrok SENT data
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.info("KB Sent: %s", data)
+
+    @staticmethod
+    def netrecv_log(peer_name, data):
+        # Log Netwrok RECV data
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.info("KB Received: %s", data)
+
+    @staticmethod
+    def spacer(peer_name):
+        # Log Netwrok RECV data
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.info(' ')
 
 
 class Grapher:
@@ -122,13 +160,14 @@ class Grapher:
 
 class AdminManager:
 
-    """Notifies the admin of a change in the system, and back up data to external storage"""
+    """Notifies the admin of a change in the system, and backs up data to external storage"""
 
     def __init__(self):
-
-        """
-        Backup data ye?
-        """
+        # The base directories to copy to and from
+        from_directory = "/a/b/c"
+        to_directory = "/x/y/z"
+        # Copies the whole directory
+        copy_tree(from_directory, to_directory)
 
     @staticmethod
     def email_sender(peer_name):
@@ -143,7 +182,7 @@ class AdminManager:
         msg['To'] = to_addr
         msg['Subject'] = "ADMIN_NOTICE"
 
-        body = "I haven't heard from node %s" % peer_name
+        body = "I haven't heard back from node %s in some time." % peer_name
 
         msg.attach(MIMEText(body, 'plain'))
 
