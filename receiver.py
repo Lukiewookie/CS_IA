@@ -69,7 +69,9 @@ class ConnectionReceiver:
 
 
             except socket.error, e:
-                AdminManager.email_sender(peer_name)
+                AdminManager.email_sender(peer_name,
+                                          body="I haven't heard back from node %s in some time." % peer_name,
+                                          include_attachment=True)
                 print ("Node %s has dropped connection" % peer_name)
                 break
 
@@ -82,17 +84,34 @@ class ConnectionReceiver:
 
         sock = socket.socket()
 
+        """
+        The following counter at sock.listen(x) only listens for up to x nodes.
+        Increase it to allow for more nodes.
+        """
+
+        number_of_nodes = 1
+        used_nodes = 0
+
         sock.bind((host, port))
-        sock.listen(5)
+        sock.listen(number_of_nodes) # This needs to be changed to allow more than 5 nodes!!!
 
         while True:
             conn, addr = sock.accept()  # Accepting incoming connections
             # Creating new thread. Calling client_thread function for this function and passing conn as argument.
-            try:
-                threading.Thread(target=ConnectionReceiver.client_thread, args=(self, connection_counter, conn)).start()
-                connection_counter += 1
-            except:
-                pass
+            if used_nodes == number_of_nodes:
+                print "The maximum number of nodes has been reached. Please update the config."
+                AdminManager.email_sender(peer_name=0,
+                                          body="The maximum number of nodes has been reached. "
+                                               "Please update the 'number_of_nodes' variable in "
+                                               "ConnectionReceiver.__init__.",
+                                          include_attachment=False)
+            else:
+                try:
+                    threading.Thread(target=ConnectionReceiver.client_thread, args=(self, connection_counter, conn)).start()
+                    connection_counter += 1
+                    used_nodes += 1
+                except:
+                    pass
 
 
 class LoggerClass:
@@ -134,19 +153,19 @@ class LoggerClass:
 
     @staticmethod
     def netsent_log(peer_name, data):
-        # Log Netwrok SENT data
+        # Log Network SENT data
         logger = logging.getLogger('node-%s' % peer_name)
         logger.info("KB Sent: %s", data)
 
     @staticmethod
     def netrecv_log(peer_name, data):
-        # Log Netwrok RECV data
+        # Log Network RECV data
         logger = logging.getLogger('node-%s' % peer_name)
         logger.info("KB Received: %s", data)
 
     @staticmethod
     def spacer(peer_name):
-        # Log Netwrok RECV data
+        # Log Network RECV data
         logger = logging.getLogger('node-%s' % peer_name)
         logger.info(' ')
 
@@ -155,7 +174,8 @@ class Grapher:
 
     """Makes a 2D graph out of the gathered data for each node"""
 
-
+    def __init__(self):
+        print "test"
 
 
 class AdminManager:
@@ -170,7 +190,7 @@ class AdminManager:
         copy_tree(from_directory, to_directory)
 
     @staticmethod
-    def email_sender(peer_name):
+    def email_sender(peer_name, body, include_attachment):
         # Simple email sending
         # Tutorial: http://naelshiab.com/tutorial-send-email-python/
         from_addr = "boinc@bsj.sch.id"
@@ -182,19 +202,18 @@ class AdminManager:
         msg['To'] = to_addr
         msg['Subject'] = "ADMIN_NOTICE"
 
-        body = "I haven't heard back from node %s in some time." % peer_name
-
         msg.attach(MIMEText(body, 'plain'))
 
-        filename = 'node-%s.log' % peer_name
-        attachment = open('node-%s.log' % peer_name, 'rb')
+        if include_attachment:
+            filename = 'node-%s.log' % peer_name
+            attachment = open('node-%s.log' % peer_name, 'rb')
 
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload((attachment).read())
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
 
-        msg.attach(part)
+            msg.attach(part)
 
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()

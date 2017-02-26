@@ -2,7 +2,6 @@
 import psutil
 import socket
 import time
-import os
 
 
 class ConnectionSender:
@@ -19,7 +18,7 @@ class ConnectionSender:
 
         system_name = str(socket.gethostname())
         print system_name
-        #sock.send(system_name)
+        # sock.send(system_name)
 
         while True:
             ConnectionSender.data(self)
@@ -45,12 +44,6 @@ class ConnectionSender:
         self.net_sent = str(psutil.net_io_counters().bytes_sent/1000)
         # Gather amount of recv data
         self.net_recv = str(psutil.net_io_counters().bytes_recv/1000)
-
-
-
-
-
-
 
 
 ConnectionSender()
