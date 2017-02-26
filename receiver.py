@@ -84,7 +84,6 @@ class LoggerClass:
         logger.info("RAM: %s", data)
 
 
-
 class AdminNotifier:
 
     """Notifies the admin of a change in the system"""
