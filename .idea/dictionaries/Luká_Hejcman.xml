@@ -2,7 +2,10 @@
   <dictionary name="Lukáš Hejcman">
     <words>
       <w>addr</w>
+      <w>gmail</w>
       <w>multicore</w>
+      <w>recv</w>
+      <w>smtp</w>
     </words>
   </dictionary>
 </component>
