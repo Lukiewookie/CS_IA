@@ -1,10 +1,14 @@
 #!/usr/bin/python
 import smtplib
 import socket
-from thread import *
 import logging
 import time
 import threading
+
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
+from email.MIMEBase import MIMEBase
+from email import encoders
 
 
 class ConnectionReceiver:
@@ -15,23 +19,42 @@ class ConnectionReceiver:
 
         peer_name = str(connection_counter)
 
+        """
+        Y U NO WORK
+        peer_name = str(conn.recv(100))
+        print peer_name
+        print type(peer_name)
+        """
 
         threading.Thread(target=LoggerClass, args=peer_name).start()
 
         # infinite loop so that function do not terminate and thread do not end.
         while True:
-            # Receiving from client
-            data = conn.recv(1024)  # Receive 1024 bytes of data
-            print data
-            LoggerClass.cpu_log(peer_name, data)  # Log it to file
 
-            time.sleep(0.5)  # wait for the other transmissions
+            try:  # Error handling
+                # Receiving from client
+                data = conn.recv(1024)  # Receive 1024 bytes of data
+                print data
+                LoggerClass.cpu_log(peer_name, data)  # Log it to file
 
-            data = conn.recv(1024)
-            print data
-            LoggerClass.ram_log(peer_name, data)
+                time.sleep(0.1)  # wait for the other transmissions
 
-            time.sleep(0.5)
+                data = conn.recv(1024)
+                print data
+                LoggerClass.ram_log(peer_name, data)
+
+                time.sleep(0.1)
+
+                data = conn.recv(1024)
+                print data
+                LoggerClass.disk_log(peer_name, data)
+
+                time.sleep(0.1)
+
+            except socket.error, e:
+                AdminManager.email_sender(peer_name)
+                print ("The node %s has dropped connection" % peer_name)
+                break
 
     def __init__(self):
         # Variable definitions
@@ -75,30 +98,70 @@ class LoggerClass:
     def cpu_log(peer_name, data):
         # Log CPU data
         logger = logging.getLogger('node-%s' % peer_name)
-        logger.info("CPU: %s", data)
+        logger.info("CPU Used: %s percent" % data)
 
     @staticmethod
     def ram_log(peer_name, data):
         # Log RAM data
         logger = logging.getLogger('node-%s' % peer_name)
-        logger.info("RAM: %s", data)
+        logger.info("RAM Used: %s percent", data)
+
+    @staticmethod
+    def disk_log(peer_name, data):
+        # Log RAM data
+        logger = logging.getLogger('node-%s' % peer_name)
+        logger.info("DISK Used: %s MB", data)
 
 
-class AdminNotifier:
+class Grapher:
 
-    """Notifies the admin of a change in the system"""
+    """Makes a 2D graph out of the gathered data for each node"""
+
+
+
+
+class AdminManager:
+
+    """Notifies the admin of a change in the system, and back up data to external storage"""
 
     def __init__(self):
-        email_sender()
 
-    def email_sender(self):
+        """
+        Backup data ye?
+        """
+
+    @staticmethod
+    def email_sender(peer_name):
         # Simple email sending
         # Tutorial: http://naelshiab.com/tutorial-send-email-python/
-        self.server = smtplib.SMTP('smtp.gmail.com', 587)
-        self.server.starttls()
-        self.server.login("boinc@bsj.sch.id", "bertha2016")
+        from_addr = "boinc@bsj.sch.id"
+        to_addr = "lukas.hejcman@outlook.com"
 
-        self.server.sendmail("boinc@bsj.sch.id", "17hejcmanl@bsj.sch.id", "One of the nodes has not reported back in an hour.")
-        self.server.quit()
+        msg = MIMEMultipart()
+
+        msg['From'] = from_addr
+        msg['To'] = to_addr
+        msg['Subject'] = "ADMIN_NOTICE"
+
+        body = "I haven't heard from node %s" % peer_name
+
+        msg.attach(MIMEText(body, 'plain'))
+
+        filename = 'node-%s.log' % peer_name
+        attachment = open('node-%s.log' % peer_name, 'rb')
+
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload((attachment).read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+        msg.attach(part)
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(from_addr, 'bertha2016')
+        text = msg.as_string()
+        server.sendmail(from_addr, to_addr, text)
+        server.quit()
 
 ConnectionReceiver()
