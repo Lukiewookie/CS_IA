@@ -184,7 +184,7 @@ class AdminManager:
 
     def __init__(self):
         # The base directories to copy to and from
-        from_directory = "/a/b/c"
+        from_directory = ''
         to_directory = "/x/y/z"
         # Copies the whole directory
         copy_tree(from_directory, to_directory)
