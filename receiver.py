@@ -1,44 +1,68 @@
+#!/usr/bin/python
 import smtplib
 import socket
+from thread import *
+import logging
 
 
 class ConnectionReceiver:
 
-    def __init__(self):
-        receive_data()
+    """Gets data from each client by creating a thread for each of them"""
 
-    def receive_data(self):
-        # https://stackoverflow.com/questions/27241804/sending-a-file-over-tcp-sockets-in-python
-        self.s = socket.socket()  # Create a socket object
-        self.host = socket.gethostname()  # Get local machine name
-        self.port = 12345  # Reserve a port for your service.
-        self.s.bind((self.host, self.port))  # Bind to the port
-        self.f = open('log', 'wb')
-        self.s.listen(5)  # Now wait for client connection.
+    @staticmethod
+    def client_thread(connection_counter, conn):
+
+        peer_name = connection_counter
+        connection_counter -= 1
+
+        LoggerClass(peer_name)
+
+        # infinite loop so that function do not terminate and thread do not end.
         while True:
-            self.c, self.addr = self.s.accept()  # Establish connection with client.
-            print "Got connection from", self.addr
-            print "Receiving..."
-            self.l = self.c.recv(1024)
-            while self.l:
-                print "Receiving..."
-                self.f.write(self.l)
-                self.l = self.c.recv(1024)
-            self.f.close()
-            print "Done Receiving"
-            self.c.send("Thank you for connecting")
-            self.c.close()
+            # Receiving from client
+            data = conn.recv(1024)  # Receive 1024 bytes of data
+            print data
 
-
-class ClientTracker:
+            LoggerClass.log(data)
 
     def __init__(self):
-        add_client()
+        # Keeps a track of how many connections took place
+        connection_counter = 1
+        # Variable definitions
+        host = 'localhost'
+        port = 52000
 
-    def add_client(self):
+        sock = socket.socket()
+
+        sock.bind((host, port))
+        sock.listen(5)
+
+        while True:
+            conn, addr = sock.accept()  # Accepting incoming connections
+            # Creating new thread. Calling client_thread function for this function and passing conn as argument.
+            start_new_thread(ConnectionReceiver.client_thread(connection_counter, conn))  # start new thread
+            # takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
+
+
+class LoggerClass:
+
+    """Class that logs down the received data from each node"""
+
+    def __init__(self, peer_name):
+
+        logging.basicConfig(level=logging.INFO,
+                            format='%(relativeCreated)6d %(threadName)s %(message)s',
+                            filename='node-%s.log' % peer_name)
+
+    @staticmethod
+    def log(data):
+
+        logging.info(data)
 
 
 class AdminNotifier:
+
+    """Notifies the admin of a change in the system"""
 
     def __init__(self):
         email_sender()
@@ -53,11 +77,4 @@ class AdminNotifier:
         self.server.sendmail("boinc@bsj.sch.id", "17hejcmanl@bsj.sch.id", "One of the nodes has not reported back in an hour.")
         self.server.quit()
 
-class BackerUpper:
-
-    def __init__(self):
-
-    def cloud_backer_upper(self):
-
-    def local_backer_upper(self):
-
+ConnectionReceiver()
