@@ -4,17 +4,6 @@ import socket
 import time
 
 
-class DataGatherer:
-
-    """Gathers the HW info"""
-
-    def __init__(self):
-        # Gathering information about CPU Usage
-        self.cpu_usage = psutil.cpu_percent(1, False)  # (Time period, Multicore?)
-        # Gathering info about SWAP usage
-        self.ram_usage = psutil.virtual_memory()
-
-
 class ConnectionSender:
 
     """Manages the connection to the server"""
@@ -28,8 +17,22 @@ class ConnectionSender:
         sock.connect((host, port))
 
         while True:
+            ConnectionSender.data(self)
             time.sleep(1)
-            sock.send("THIS IS A TEST")
+            sock.send(self.cpu_usage)
+            time.sleep(1)
+            sock.send(self.ram_usage)
+
+    def data(self):
+        # Gathering CPU usage
+        self.cpu_usage = str(psutil.cpu_percent(1, True))[1:-1] # Time period, multicore
+        # Gathering RAM usage
+        self.ram_usage = str(psutil.virtual_memory().percent) # Return type is tuple (wo/ str)
+
+
+
+
+
 
 ConnectionSender()
 
