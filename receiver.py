@@ -3,6 +3,7 @@ import smtplib
 import socket
 from thread import *
 import logging
+import time
 
 
 class ConnectionReceiver:
@@ -22,8 +23,15 @@ class ConnectionReceiver:
             # Receiving from client
             data = conn.recv(1024)  # Receive 1024 bytes of data
             print data
+            LoggerClass.cpu_log(data)  # Log it to file
 
-            LoggerClass.log(data)
+            time.sleep(0.5)  # wait for the other transmissions
+
+            data = conn.recv(1024)
+            print data
+            LoggerClass.ram_log(data)
+
+            time.sleep(0.5)
 
     def __init__(self):
         # Keeps a track of how many connections took place
@@ -51,13 +59,19 @@ class LoggerClass:
     def __init__(self, peer_name):
 
         logging.basicConfig(level=logging.INFO,
-                            format='%(relativeCreated)6d %(threadName)s %(message)s',
+                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             filename='node-%s.log' % peer_name)
 
     @staticmethod
-    def log(data):
+    def cpu_log(data):
 
-        logging.info(data)
+        logging.info("CPU: %s", data)
+
+    @staticmethod
+    def ram_log(data):
+
+        logging.info("RAM: %s", data)
+
 
 
 class AdminNotifier:
