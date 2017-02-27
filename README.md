@@ -16,7 +16,7 @@ How do I get set up?
 		
 The system works by having one server that takes connections from different nodes by using multithreading. The server creates a thread for every connection that it receives. This thread takes care of receiving the logging data from the node, and writes it downt to a log file called 'node-X.log', where X is the number of the node. This is maintained by the server until such a moment where the connection between the thread and the node is terminated. In such a case, the server sends and email to the pre-determined email address warning the Administrator of this change. 
 
-Furthermore, the server makes mackups of the log files. There is one local file to which the server constantly writes, then there is a separate copy of the file maintained every hour on a separate drive to protect the data from drive failure. Lastly, a copy of the data is kept on the node itself.
+Furthermore, the server makes backups of the log files. There is one local file to which the server constantly writes, then there is a separate copy of the file maintained every hour on a separate drive to protect the data from drive failure. Lastly, a copy of the data is kept on the node itself.
 
 ### Configuration ###
 
@@ -28,6 +28,8 @@ Furthermore, the server makes mackups of the log files. There is one local file 
 
 `host(ip)` = the IP of the server machine
 
+`sleeptime(float)` = This is the time in seconds between the different communications. Increase this to decrease logging frequency IN BOTH CLIENT AND SERVER (and vice versa)
+
 
 ### Dependencies ###
 
@@ -37,7 +39,7 @@ The only dependency for the program in its current state is the psutil module. T
 pip install psutil
 ```
 
-The other modules are built into the normal python distribution.
+into the terminal. The other modules are built into the normal python distribution. Do note this software was developed for Linux, and some inconsistencies can be found if used on a different platform.
 
 ### Deployment instructions ###
 
@@ -53,7 +55,7 @@ Contribution guidelines
 
 ### Code review ###
 
-Currently none. High marks are preffered though :)
+Currently none. High marks are preferred though :)
 
 ### Other guidelines ###
 
@@ -61,10 +63,10 @@ The code is well commented and clearly written. Everything should be clear. If y
 
 ### Who do I talk to? ###
 
-* Repo owner or admin
+##### Repo owner or admin #####
 
 Lukas Hejcman (lukas.hejcman@outlook.com)
 
-* Other community or team contact
+##### Other community or team contact #####
 
 Currently none. After obtaining my IB Diploma, this code will be released on GitHub.
