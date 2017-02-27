@@ -17,7 +17,8 @@ class ConnectionReceiver:
 
     """Gets data from each client by creating a thread for each of them"""
 
-    def client_thread(self, connection_counter, conn):
+    @staticmethod
+    def client_thread(connection_counter, conn):
 
         peer_name = str(connection_counter)
 
@@ -68,7 +69,6 @@ class ConnectionReceiver:
 
                 LoggerClass.spacer(peer_name)
 
-
             except socket.error, e:
                 AdminManager.email_sender(peer_name,
                                           body="I haven't heard back from node %s in some time." % peer_name,
@@ -108,7 +108,7 @@ class ConnectionReceiver:
                                           include_attachment=False)
             else:
                 try:
-                    threading.Thread(target=ConnectionReceiver.client_thread, args=(self, connection_counter, conn)).start()
+                    threading.Thread(target=ConnectionReceiver.client_thread, args=(connection_counter, conn)).start()
                     connection_counter += 1
                     used_nodes += 1
                 except:
@@ -138,13 +138,13 @@ class LoggerClass:
     def cpu_log(peer_name, data):
         # Log CPU data
         logger = logging.getLogger('node-%s' % peer_name)
-        logger.info("CPU Used: %s percent" % data)
+        logger.info("CPU Used: %s (for each core)" % data)
 
     @staticmethod
     def ram_log(peer_name, data):
         # Log RAM data
         logger = logging.getLogger('node-%s' % peer_name)
-        logger.info("RAM Used: %s percent", data)
+        logger.info("RAM Used: %s PRC", data)
 
     @staticmethod
     def disk_log(peer_name, data):
@@ -176,7 +176,7 @@ class Grapher:
     """Makes a 2D graph out of the gathered data for each node"""
 
     def __init__(self):
-        print "test"
+        print "WIP"
 
 
 class AdminManager:
