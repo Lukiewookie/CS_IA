@@ -25,22 +25,34 @@ class ConnectionSender:
         print system_name
         # sock.send(system_name)
 
+        sleeptime = 0.1
+
         while True:
             ConnectionSender.data(self)
-            time.sleep(0.1)
+
+            time.sleep(sleeptime)
+
             sock.send(self.cpu_usage)
             Logger.cpu_log(peer_name=socket.gethostname(), data=self.cpu_usage)
-            time.sleep(0.1)
+
+            time.sleep(sleeptime)
+
             sock.send(self.ram_usage)
             Logger.ram_log(peer_name=socket.gethostname(), data=self.ram_usage)
-            time.sleep(0.1)
+
+            time.sleep(sleeptime)
+
             sock.send(self.disk_usage)
             Logger.disk_log(peer_name=socket.gethostname(), data=self.disk_usage)
-            time.sleep(0.1)
+
+            time.sleep(sleeptime)
+
             sock.send(self.net_sent)
             Logger.netsent_log(peer_name=socket.gethostname(), data=self.net_sent)
-            time.sleep(0.1)
+
+            time.sleep(sleeptime)
             sock.send(self.net_recv)
+
             Logger.netrecv_log(peer_name=socket.gethostname(), data=self.net_recv)
 
             Logger.spacer(peer_name)

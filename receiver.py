@@ -29,7 +29,8 @@ class ConnectionReceiver:
         """
 
         threading.Thread(target=LoggerClass, args=peer_name).start()
-
+        # Sets the amount of time between the different connection. Change this to change the frequency of logging
+        sleeptime = 0.1
         # infinite loop so that function do not terminate and thread do not end.
         while True:
 
@@ -39,31 +40,31 @@ class ConnectionReceiver:
                 print data
                 LoggerClass.cpu_log(peer_name, data)  # Log it to file
 
-                time.sleep(0.1)  # wait for the other transmissions
+                time.sleep(sleeptime)  # wait for the other transmissions
 
                 data = conn.recv(1024)
                 print data
                 LoggerClass.ram_log(peer_name, data)
 
-                time.sleep(0.1)
+                time.sleep(sleeptime)
 
                 data = conn.recv(1024)
                 print data
                 LoggerClass.disk_log(peer_name, data)
 
-                time.sleep(0.1)
+                time.sleep(sleeptime)
 
                 data = conn.recv(1024)
                 print data
                 LoggerClass.netsent_log(peer_name, data)
 
-                time.sleep(0.1)
+                time.sleep(sleeptime)
 
                 data = conn.recv(1024)
                 print data
                 LoggerClass.netrecv_log(peer_name, data)
 
-                time.sleep(0.1)
+                time.sleep(sleeptime)
 
                 LoggerClass.spacer(peer_name)
 
