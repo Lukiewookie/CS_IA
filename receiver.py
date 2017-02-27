@@ -76,8 +76,6 @@ class ConnectionReceiver:
         host = 'localhost'
         port = 52000
 
-        # connection_counter = 1
-
         sock = socket.socket()
 
         """
@@ -89,7 +87,7 @@ class ConnectionReceiver:
         used_nodes = 0
 
         sock.bind((host, port))
-        sock.listen(number_of_nodes) # This needs to be changed to allow more than 5 nodes!!!
+        sock.listen(number_of_nodes)  # This needs to be changed to allow more than 5 nodes!!!
 
         while True:
             conn, addr = sock.accept()  # Accepting incoming connections
@@ -105,9 +103,8 @@ class ConnectionReceiver:
             else:
                 try:
                     threading.Thread(target=ConnectionReceiver.client_thread, args=(conn,)).start()
-                    # connection_counter += 1
                     used_nodes += 1
-                except:
+                except socket.error:
                     pass
 
 

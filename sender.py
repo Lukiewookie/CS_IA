@@ -3,6 +3,7 @@ import psutil
 import socket
 import time
 import logging
+import platform
 
 
 class ConnectionSender:
@@ -13,6 +14,7 @@ class ConnectionSender:
 
         # Get the node name to make log writing simpler
         peer_name = socket.gethostname()
+        print platform.system()
 
         '''
         For testing purposes, peer_name has been redefined below!!!
@@ -138,4 +140,3 @@ class Logger:
 
 
 ConnectionSender()
-
