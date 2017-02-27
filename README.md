@@ -70,3 +70,13 @@ Lukas Hejcman (lukas.hejcman@outlook.com)
 ##### Other community or team contact #####
 
 Currently none. After obtaining my IB Diploma, this code will be released on GitHub.
+
+
+TO-DO
+-----
+
+* Make the receiver work with the actual hostname of the sender.py machine (currently an error with string formatting I think?)
+* Add a grapher method, that takes the last X values for all the different logs and graphs them against time
+* Add a temperature monitor (works through psutils but might be easier through something else)
+* Add the ability to upload to cloud storage (or at least send the attachments through email?)
+* Add more exception handling and improve stability
