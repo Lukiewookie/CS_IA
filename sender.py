@@ -11,7 +11,14 @@ class ConnectionSender:
 
     def __init__(self):
 
-        peer_name = str(socket.gethostname())
+        # Get the node name to make log writing simpler
+        peer_name = socket.gethostname()
+
+        '''
+        For testing purposes, peer_name has been redefined below!!!
+        '''
+        # Delete this variable definition after testing phase
+        peer_name = "LOCAL"
 
         Logger()
 
@@ -23,7 +30,7 @@ class ConnectionSender:
 
         system_name = str(socket.gethostname())
         print system_name
-        # sock.send(system_name)
+        sock.send(system_name)
 
         sleeptime = 0.1
 
@@ -33,27 +40,27 @@ class ConnectionSender:
             time.sleep(sleeptime)
 
             sock.send(self.cpu_usage)
-            Logger.cpu_log(peer_name=socket.gethostname(), data=self.cpu_usage)
+            Logger.cpu_log(peer_name, self.cpu_usage)
 
             time.sleep(sleeptime)
 
             sock.send(self.ram_usage)
-            Logger.ram_log(peer_name=socket.gethostname(), data=self.ram_usage)
+            Logger.ram_log(peer_name, self.ram_usage)
 
             time.sleep(sleeptime)
 
             sock.send(self.disk_usage)
-            Logger.disk_log(peer_name=socket.gethostname(), data=self.disk_usage)
+            Logger.disk_log(peer_name, self.disk_usage)
 
             time.sleep(sleeptime)
 
             sock.send(self.net_sent)
-            Logger.netsent_log(peer_name=socket.gethostname(), data=self.net_sent)
+            Logger.netsent_log(peer_name, self.net_sent)
 
             time.sleep(sleeptime)
             sock.send(self.net_recv)
 
-            Logger.netrecv_log(peer_name=socket.gethostname(), data=self.net_recv)
+            Logger.netrecv_log(peer_name, self.net_recv)
 
             Logger.spacer(peer_name)
 
@@ -73,7 +80,9 @@ class ConnectionSender:
 class Logger:
 
     def __init__(self):
-        peer_name = socket.gethostname()
+
+        peer_name = "LOCAL"
+
         # create the thread's logger
         logger = logging.getLogger('node-%s' % peer_name)
         logger.setLevel(logging.INFO)

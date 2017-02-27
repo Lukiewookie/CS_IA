@@ -18,18 +18,12 @@ class ConnectionReceiver:
     """Gets data from each client by creating a thread for each of them"""
 
     @staticmethod
-    def client_thread(connection_counter, conn):
+    def client_thread(conn):
 
-        peer_name = str(connection_counter)
+        peer_name = conn.recv(1024)
+        time.sleep(0.1)
 
-        """
-        Y U NO WORK
-        peer_name = str(conn.recv(100))
-        print peer_name
-        print type(peer_name)
-        """
-
-        threading.Thread(target=LoggerClass, args=peer_name).start()
+        threading.Thread(target=LoggerClass, args=(peer_name,)).start()
         # Sets the amount of time between the different connection. Change this to change the frequency of logging
         sleeptime = 0.1
         # infinite loop so that function do not terminate and thread do not end.
@@ -38,42 +32,43 @@ class ConnectionReceiver:
             try:  # Error handling
                 # Receiving from client
                 data = conn.recv(1024)  # Receive 1024 bytes of data
-                print data
+                print("%s CPU: %s" % (peer_name, data))
                 LoggerClass.cpu_log(peer_name, data)  # Log it to file
 
                 time.sleep(sleeptime)  # wait for the other transmissions
 
                 data = conn.recv(1024)
-                print data
+                print("%s RAM: %s" % (peer_name, data))
                 LoggerClass.ram_log(peer_name, data)
 
                 time.sleep(sleeptime)
 
                 data = conn.recv(1024)
-                print data
+                print("%s DISK: %s" % (peer_name, data))
                 LoggerClass.disk_log(peer_name, data)
 
                 time.sleep(sleeptime)
 
                 data = conn.recv(1024)
-                print data
+                print("%s SENT: %s" % (peer_name, data))
                 LoggerClass.netsent_log(peer_name, data)
 
                 time.sleep(sleeptime)
 
                 data = conn.recv(1024)
-                print data
+                print("%s RECV: %s" % (peer_name, data))
                 LoggerClass.netrecv_log(peer_name, data)
 
                 time.sleep(sleeptime)
 
                 LoggerClass.spacer(peer_name)
 
-            except socket.error, e:
+            except socket.error:
                 AdminManager.email_sender(peer_name,
-                                          body="I haven't heard back from node %s in some time." % peer_name,
+                                          subject="%s_UNRESPONSIVE" % peer_name,
+                                          body="I haven't heard back from node '%s' in some time." % peer_name,
                                           include_attachment=True)
-                print ("Node %s has dropped connection" % peer_name)
+                print ("Node '%s' has dropped connection" % peer_name)
                 break
 
     def __init__(self):
@@ -81,7 +76,7 @@ class ConnectionReceiver:
         host = 'localhost'
         port = 52000
 
-        connection_counter = 1
+        # connection_counter = 1
 
         sock = socket.socket()
 
@@ -102,14 +97,15 @@ class ConnectionReceiver:
             if used_nodes == number_of_nodes:
                 print "The maximum number of nodes has been reached. Please update the config."
                 AdminManager.email_sender(peer_name=0,
+                                          subject="ADMIN_NOTICE",
                                           body="The maximum number of nodes has been reached. "
                                                "Please update the 'number_of_nodes' variable in "
                                                "ConnectionReceiver.__init__.",
                                           include_attachment=False)
             else:
                 try:
-                    threading.Thread(target=ConnectionReceiver.client_thread, args=(connection_counter, conn)).start()
-                    connection_counter += 1
+                    threading.Thread(target=ConnectionReceiver.client_thread, args=(conn,)).start()
+                    # connection_counter += 1
                     used_nodes += 1
                 except:
                     pass
@@ -191,7 +187,7 @@ class AdminManager:
         copy_tree(from_directory, to_directory)
 
     @staticmethod
-    def email_sender(peer_name, body, include_attachment):
+    def email_sender(peer_name, subject, body, include_attachment):
         # Simple email sending
         # Tutorial: http://naelshiab.com/tutorial-send-email-python/
         from_addr = "boinc@bsj.sch.id"
@@ -201,7 +197,7 @@ class AdminManager:
 
         msg['From'] = from_addr
         msg['To'] = to_addr
-        msg['Subject'] = "ADMIN_NOTICE"
+        msg['Subject'] = subject
 
         msg.attach(MIMEText(body, 'plain'))
 
