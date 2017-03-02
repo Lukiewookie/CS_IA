@@ -4,6 +4,7 @@ import socket
 import logging
 import time
 import threading
+import dropbox
 
 from distutils.dir_util import copy_tree
 
@@ -62,6 +63,15 @@ class ConnectionReceiver:
                 time.sleep(sleeptime)
 
                 LoggerClass.spacer(peer_name)
+
+                try:
+                    if time.time() % 3600 == 0:
+                        AdminManager.file_uploader(upload_file_from='C:\Users\Lukáš Hejcman\PycharmProjects\CS_IA\node-%s.log' % peer_name,
+                                                   upload_file_to='CS_IA\node-%s.log' % peer_name)
+                except:
+                    print("Was unable to upload file. Backed up to local storage instead.")
+                    AdminManager.local_backer(from_directory='C:\Users\Lukáš Hejcman\PycharmProjects\CS_IA\node-%s.log' % peer_name,
+                                              to_directory='C:\Users\Lukáš Hejcman\Desktop\node-%s.log' % peer_name)
 
             except socket.error:
                 AdminManager.email_sender(peer_name,
@@ -177,11 +187,22 @@ class AdminManager:
     """Notifies the admin of a change in the system, and backs up data to external storage"""
 
     def __init__(self):
-        # The base directories to copy to and from
-        from_directory = ''
-        to_directory = "/x/y/z"
-        # Copies the whole directory
+        print("The admin manager is active now")
+
+    @staticmethod
+    def local_backer(from_directory, to_directory):
+        #copies the whole directory
         copy_tree(from_directory, to_directory)
+
+    @staticmethod
+    def file_uploader(upload_file_from, upload_file_to):
+        # https://stackoverflow.com/questions/23894221/upload-file-to-my-dropbox-from-python-script
+        # Takes the file and uploads it to Dropbox
+        dbx = dropbox.Dropbox('nzvJcwuTbfAAAAAAAAAAJ_GLQaaITMigKEA6M6w7ouvgjElJ5fd4_nrgbyQNaQEs')
+        print(dbx.users_get_current_account())
+
+        with open(upload_file_from, 'rb') as f:
+            dbx.files_upload(f.read(), upload_file_to)
 
     @staticmethod
     def email_sender(peer_name, subject, body, include_attachment):
