@@ -5,6 +5,8 @@ import time
 import logging
 import platform
 
+from ConfigParser import SafeConfigParser
+
 
 class ConnectionSender:
 
@@ -25,7 +27,7 @@ class ConnectionSender:
         Logger()
 
         sock = socket.socket()
-        host = '127.0.0.1'
+        host = parser.get('Networking', 'server_ip')
         port = 52000
 
         sock.connect((host, port))
@@ -138,5 +140,8 @@ class Logger:
         logger = logging.getLogger('node-%s' % peer_name)
         logger.info(' ')
 
+
+parser = SafeConfigParser()
+parser.read('config.ini')
 
 ConnectionSender()

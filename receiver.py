@@ -5,8 +5,9 @@ import logging
 import time
 import threading
 import dropbox
+import shutil
 
-from distutils.dir_util import copy_tree
+from ConfigParser import SafeConfigParser
 
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
@@ -26,7 +27,7 @@ class ConnectionReceiver:
 
         threading.Thread(target=LoggerClass, args=(peer_name,)).start()
         # Sets the amount of time between the different connection. Change this to change the frequency of logging
-        sleeptime = 0.1
+        sleeptime = float(parser.get('Networking', 'time_interval'))
         # infinite loop so that function do not terminate and thread do not end.
         while True:
 
@@ -64,14 +65,17 @@ class ConnectionReceiver:
 
                 LoggerClass.spacer(peer_name)
 
+                '''
                 try:
-                    if time.time() % 3600 == 0:
-                        AdminManager.file_uploader(upload_file_from='C:\Users\Lukáš Hejcman\PycharmProjects\CS_IA\node-%s.log' % peer_name,
-                                                   upload_file_to='CS_IA\node-%s.log' % peer_name)
+                    AdminManager.file_uploader(
+                        upload_file_from='/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name,
+                        upload_file_to='CS_IA/node-%s.log' % peer_name)
                 except:
                     print("Was unable to upload file. Backed up to local storage instead.")
-                    AdminManager.local_backer(from_directory='C:\Users\Lukáš Hejcman\PycharmProjects\CS_IA\node-%s.log' % peer_name,
-                                              to_directory='C:\Users\Lukáš Hejcman\Desktop\node-%s.log' % peer_name)
+                    AdminManager.local_backer(from_directory='/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name,
+                                              to_directory='/home/virtualbox/Desktop/node-%s.log' % peer_name)
+                    continue
+                '''
 
             except socket.error:
                 AdminManager.email_sender(peer_name,
@@ -83,21 +87,16 @@ class ConnectionReceiver:
 
     def __init__(self):
         # Variable definitions
-        host = 'localhost'
+        host = parser.get('Networking', 'server_ip')
         port = 52000
 
         sock = socket.socket()
 
-        """
-        The following counter at sock.listen(x) only listens for up to x nodes.
-        Increase it to allow for more nodes.
-        """
-
-        number_of_nodes = 1
+        number_of_nodes = int(parser.get('Networking', 'max_nodes'))
         used_nodes = 0
 
         sock.bind((host, port))
-        sock.listen(number_of_nodes)  # This needs to be changed to allow more than 5 nodes!!!
+        sock.listen(number_of_nodes)
 
         while True:
             conn, addr = sock.accept()  # Accepting incoming connections
@@ -119,7 +118,7 @@ class ConnectionReceiver:
 
 
 class LoggerClass:
-
+    
     """
     Class that logs down the received data from each node. This class contains methods for
     writing all the different info separately.
@@ -191,8 +190,8 @@ class AdminManager:
 
     @staticmethod
     def local_backer(from_directory, to_directory):
-        #copies the whole directory
-        copy_tree(from_directory, to_directory)
+        # copies the whole directory
+        shutil.copy(from_directory, to_directory)
 
     @staticmethod
     def file_uploader(upload_file_from, upload_file_to):
@@ -208,8 +207,8 @@ class AdminManager:
     def email_sender(peer_name, subject, body, include_attachment):
         # Simple email sending
         # Tutorial: http://naelshiab.com/tutorial-send-email-python/
-        from_addr = "boinc@bsj.sch.id"
-        to_addr = "lukas.hejcman@outlook.com"
+        from_addr = parser.get('Email Config', 'sending_address')
+        to_addr = parser.get('Email Config', 'receiving_address')
 
         msg = MIMEMultipart()
 
@@ -230,11 +229,15 @@ class AdminManager:
 
             msg.attach(part)
 
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP(parser.get('Email Config', 'smtp_server'), parser.get('Email Config', 'smtp_port'))
         server.starttls()
-        server.login(from_addr, 'bertha2016')
+        server.login(from_addr, parser.get('Email Config', 'password'))
         text = msg.as_string()
         server.sendmail(from_addr, to_addr, text)
         server.quit()
+
+
+parser = SafeConfigParser()
+parser.read('config.ini')
 
 ConnectionReceiver()
