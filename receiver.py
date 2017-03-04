@@ -6,6 +6,7 @@ import time
 import threading
 import dropbox
 import shutil
+import os
 
 from ConfigParser import SafeConfigParser
 
@@ -16,7 +17,6 @@ from email import encoders
 
 
 class ConnectionReceiver:
-
     """Gets data from each client by creating a thread for each of them"""
 
     @staticmethod
@@ -65,17 +65,9 @@ class ConnectionReceiver:
 
                 LoggerClass.spacer(peer_name)
 
-                '''
-                try:
-                    AdminManager.file_uploader(
-                        upload_file_from='/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name,
-                        upload_file_to='CS_IA/node-%s.log' % peer_name)
-                except:
-                    print("Was unable to upload file. Backed up to local storage instead.")
-                    AdminManager.local_backer(from_directory='/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name,
-                                              to_directory='/home/virtualbox/Desktop/node-%s.log' % peer_name)
-                    continue
-                '''
+                if time.time() % 3600 == 0:
+                    threading.Thread(target=AdminManager.file_uploader(), args=peer_name)
+                    threading.Thread(target=AdminManager.local_backer(), args=peer_name)
 
             except socket.error:
                 AdminManager.email_sender(peer_name,
@@ -118,7 +110,6 @@ class ConnectionReceiver:
 
 
 class LoggerClass:
-    
     """
     Class that logs down the received data from each node. This class contains methods for
     writing all the different info separately.
@@ -174,7 +165,6 @@ class LoggerClass:
 
 
 class Grapher:
-
     """Makes a 2D graph out of the gathered data for each node"""
 
     def __init__(self):
@@ -182,26 +172,35 @@ class Grapher:
 
 
 class AdminManager:
-
     """Notifies the admin of a change in the system, and backs up data to external storage"""
 
     def __init__(self):
         print("The admin manager is active now")
 
     @staticmethod
-    def local_backer(from_directory, to_directory):
+    def local_backer(peer_name):
         # copies the whole directory
+        from_directory = '/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name
+        to_directory = '/home/virtualbox/Desktop/node-%s.log' % peer_name
+
         shutil.copy(from_directory, to_directory)
 
+        return
+
     @staticmethod
-    def file_uploader(upload_file_from, upload_file_to):
+    def file_uploader(peer_name):
         # https://stackoverflow.com/questions/23894221/upload-file-to-my-dropbox-from-python-script
         # Takes the file and uploads it to Dropbox
-        dbx = dropbox.Dropbox('nzvJcwuTbfAAAAAAAAAAJ_GLQaaITMigKEA6M6w7ouvgjElJ5fd4_nrgbyQNaQEs')
+        dbx = dropbox.Dropbox(parser.get('Dropbox Config', 'access_token'))
         print(dbx.users_get_current_account())
 
+        upload_file_from = '/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name
+        upload_file_to = '/CS_IA/node-%s.log' % peer_name
+
         with open(upload_file_from, 'rb') as f:
-            dbx.files_upload(f.read(), upload_file_to)
+            dbx.files_upload(f.read(), upload_file_to, mode=dropbox.files.WriteMode.overwrite)
+
+        return
 
     @staticmethod
     def email_sender(peer_name, subject, body, include_attachment):
