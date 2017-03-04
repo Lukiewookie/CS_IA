@@ -86,9 +86,13 @@ class ConnectionReceiver:
 
         number_of_nodes = int(parser.get('Networking', 'max_nodes'))
         used_nodes = 0
+        # Resets the sokcet by sending RST. This allows the program to bypass TIME_WAIT on *nix
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
 
         sock.bind((host, port))
         sock.listen(number_of_nodes)
+
+        AdminManager.local_backer()
 
         while True:
             conn, addr = sock.accept()  # Accepting incoming connections
@@ -178,14 +182,25 @@ class AdminManager:
         print("The admin manager is active now")
 
     @staticmethod
-    def local_backer(peer_name):
-        # copies the whole directory
-        from_directory = '/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name
-        to_directory = '/home/virtualbox/Desktop/node-%s.log' % peer_name
+    def local_backer():
 
-        shutil.copy(from_directory, to_directory)
+        for filename in os.listdir('/home/virtualbox/Desktop/CS_IA/'):
+            if filename.endswith(".log"):
 
-        return
+                # Sets the directories
+                from_directory = '/home/virtualbox/Desktop/CS_IA/%s' % filename
+                to_directory = '/home/virtualbox/Desktop/%s' % filename
+                # Copies them to a new directory
+                shutil.copy(from_directory, to_directory)
+                # Calls for them to be uploaded
+                AdminManager.file_uploader(peer_name=filename)
+
+                continue
+            else:
+                continue
+
+        time.sleep(10)
+        AdminManager.local_backer()
 
     @staticmethod
     def file_uploader(peer_name):
@@ -194,13 +209,11 @@ class AdminManager:
         dbx = dropbox.Dropbox(parser.get('Dropbox Config', 'access_token'))
         print(dbx.users_get_current_account())
 
-        upload_file_from = '/home/virtualbox/Desktop/CS_IA/node-%s.log' % peer_name
-        upload_file_to = '/CS_IA/node-%s.log' % peer_name
+        upload_file_from = '/home/virtualbox/Desktop/CS_IA/%s' % peer_name
+        upload_file_to = '/CS_IA/%s' % peer_name
 
         with open(upload_file_from, 'rb') as f:
             dbx.files_upload(f.read(), upload_file_to, mode=dropbox.files.WriteMode.overwrite)
-
-        return
 
     @staticmethod
     def email_sender(peer_name, subject, body, include_attachment):
