@@ -4,6 +4,7 @@ import socket
 import time
 import logging
 import platform
+import struct
 
 from ConfigParser import SafeConfigParser
 
@@ -29,6 +30,8 @@ class ConnectionSender:
         sock = socket.socket()
         host = parser.get('Networking', 'server_ip')
         port = 52000
+        # Resets the sokcet by sending RST. This allows the program to bypass TIME_WAIT on *nix
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
 
         sock.connect((host, port))
 
