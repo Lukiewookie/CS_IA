@@ -22,16 +22,19 @@ class ConnectionReceiver:
     @staticmethod
     def client_thread(conn):
 
+        # Set the timeout for this connection (only necessary on Linux)
+        conn.settimeout(int(parser.get('Networking', 'connection_timeout')))
+        # Receiving the name of the node to log down
         peer_name = conn.recv(1024)
         time.sleep(0.1)
-
+        # Starting a new thread to log to a file
         threading.Thread(target=LoggerClass, args=(peer_name,)).start()
         # Sets the amount of time between the different connection. Change this to change the frequency of logging
         sleeptime = float(parser.get('Networking', 'time_interval'))
         # infinite loop so that function do not terminate and thread do not end.
         while True:
 
-            try:  # Error handling
+            try:
                 # Receiving from client
                 data = conn.recv(1024)  # Receive 1024 bytes of data
                 print("%s CPU: %s" % (peer_name, data))
@@ -64,10 +67,6 @@ class ConnectionReceiver:
                 time.sleep(sleeptime)
 
                 LoggerClass.spacer(peer_name)
-
-                if time.time() % 3600 == 0:
-                    threading.Thread(target=AdminManager.file_uploader(), args=peer_name)
-                    threading.Thread(target=AdminManager.local_backer(), args=peer_name)
 
             except socket.error:
                 AdminManager.email_sender(peer_name,
