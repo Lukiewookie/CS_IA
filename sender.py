@@ -29,7 +29,7 @@ class ConnectionSender:
 
         sock = socket.socket()
         host = parser.get('Networking', 'server_ip')
-        port = 52000
+        port = int(parser.get('Networking', 'port'))
         # Resets the sokcet by sending RST. This allows the program to bypass TIME_WAIT on *nix
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
 
