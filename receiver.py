@@ -7,6 +7,7 @@ import threading
 import dropbox
 import shutil
 import os
+import struct
 
 from ConfigParser import SafeConfigParser
 
@@ -17,8 +18,9 @@ from email import encoders
 
 
 class ConnectionReceiver:
-    """Gets data from each client by creating a thread for each of them"""
-
+    """
+    Gets data from each client by creating a thread for each of them
+    """
     @staticmethod
     def client_thread(conn):
 
@@ -29,6 +31,9 @@ class ConnectionReceiver:
         time.sleep(0.1)
         # Starting a new thread to log to a file
         threading.Thread(target=LoggerClass, args=(peer_name,)).start()
+
+        # Process(target=AdminManager.file_uploader, args=(peer_name,)).start()
+
         # Sets the amount of time between the different connection. Change this to change the frequency of logging
         sleeptime = float(parser.get('Networking', 'time_interval'))
         # infinite loop so that function do not terminate and thread do not end.
@@ -79,7 +84,7 @@ class ConnectionReceiver:
     def __init__(self):
         # Variable definitions
         host = parser.get('Networking', 'server_ip')
-        port = 52000
+        port = int(parser.get('Networking', 'port'))
 
         sock = socket.socket()
 
@@ -91,7 +96,10 @@ class ConnectionReceiver:
         sock.bind((host, port))
         sock.listen(number_of_nodes)
 
-        AdminManager.local_backer()
+        # Starts a new thread for the file backer
+        uploader_thread = threading.Thread(target=AdminManager.local_backer, args=())
+        uploader_thread.daemon = True
+        uploader_thread.start()
 
         while True:
             conn, addr = sock.accept()  # Accepting incoming connections
@@ -117,7 +125,6 @@ class LoggerClass:
     Class that logs down the received data from each node. This class contains methods for
     writing all the different info separately.
     """
-
     def __init__(self, peer_name):
         # create the thread's logger
         logger = logging.getLogger('node-%s' % peer_name)
@@ -168,48 +175,49 @@ class LoggerClass:
 
 
 class Grapher:
-    """Makes a 2D graph out of the gathered data for each node"""
+    """
+    Makes a 2D graph out of the gathered data for each node
+    """
+    # //TODO: Add a grapher method
 
     def __init__(self):
         print "WIP"
 
 
 class AdminManager:
-    """Notifies the admin of a change in the system, and backs up data to external storage"""
-
+    """
+    Notifies the admin of a change in the system, and backs up data to external storage
+    """
     def __init__(self):
         print("The admin manager is active now")
 
     @staticmethod
     def local_backer():
-
-        for filename in os.listdir('/home/virtualbox/Desktop/CS_IA/'):
-            if filename.endswith(".log"):
-
-                # Sets the directories
-                from_directory = '/home/virtualbox/Desktop/CS_IA/%s' % filename
-                to_directory = '/home/virtualbox/Desktop/%s' % filename
-                # Copies them to a new directory
-                shutil.copy(from_directory, to_directory)
-                # Calls for them to be uploaded
-                AdminManager.file_uploader(peer_name=filename)
-
-                continue
-            else:
-                continue
-
-        time.sleep(10)
-        AdminManager.local_backer()
+        # Copies the file locally, and then uploads it to Dropbox
+        while True:
+            for filename in os.listdir('/home/virtualbox/Desktop/CS_IA/'):
+                if filename.endswith(".log"):
+                    # Sets the directories
+                    from_directory = '/home/virtualbox/Desktop/CS_IA/%s' % filename
+                    to_directory = '/home/virtualbox/Desktop/%s' % filename
+                    # Copies them to a new directory
+                    shutil.copy(from_directory, to_directory)
+                    # Calls for them to be uploaded
+                    AdminManager.file_uploader(filename)
+                    time.sleep(int(parser.get('Dropbox Config', 'backup_timer')))
+                    continue
+                else:
+                    continue
 
     @staticmethod
-    def file_uploader(peer_name):
+    def file_uploader(filename):
         # https://stackoverflow.com/questions/23894221/upload-file-to-my-dropbox-from-python-script
         # Takes the file and uploads it to Dropbox
         dbx = dropbox.Dropbox(parser.get('Dropbox Config', 'access_token'))
         print(dbx.users_get_current_account())
 
-        upload_file_from = '/home/virtualbox/Desktop/CS_IA/%s' % peer_name
-        upload_file_to = '/CS_IA/%s' % peer_name
+        upload_file_from = '/home/virtualbox/Desktop/CS_IA/%s' % filename
+        upload_file_to = '/CS_IA/%s' % filename
 
         with open(upload_file_from, 'rb') as f:
             dbx.files_upload(f.read(), upload_file_to, mode=dropbox.files.WriteMode.overwrite)
