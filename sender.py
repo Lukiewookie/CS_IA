@@ -3,27 +3,18 @@ import psutil
 import socket
 import time
 import logging
-import platform
 import struct
 
 from ConfigParser import SafeConfigParser
 
 
 class ConnectionSender:
-
-    """Manages the connection to the server"""
-
+    """
+    Manages the connection to the server
+    """
     def __init__(self):
-
         # Get the node name to make log writing simpler
         peer_name = socket.gethostname()
-        print platform.system()
-
-        '''
-        For testing purposes, peer_name has been redefined below!!!
-        '''
-        # Delete this variable definition after testing phase
-        peer_name = "LOCAL"
 
         Logger()
 
