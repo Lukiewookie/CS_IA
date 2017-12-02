@@ -6,7 +6,7 @@ Computer Science IA
 What is this repository for?
 -----------------------------
 
-* This is my Computer Science Internal Assessment v1.0
+* This is my Computer Science Internal Assessment
 * Version 1.0
 
 How do I get set up?
